@@ -1,6 +1,6 @@
 (() => {
-  if (window.__agCtxPillVersion === 15) return;
-  window.__agCtxPillVersion = 15;
+  if (window.__agCtxPillVersion === 16) return;
+  window.__agCtxPillVersion = 16;
   window.__agCtxPillInstalled = true;
 
   const PILL_ID = 'ag-ctx-pill-host';
@@ -259,39 +259,50 @@
     }
   };
 
-  const findSettingsCardStack = () => {
-    const anchor = [...document.querySelectorAll('*')].find((el) => {
+  const findInterfaceLayoutAnchor = () => {
+    const headings = [...document.querySelectorAll('*')].filter((el) => {
       if (el.children.length > 0 || el.closest(`#${SETTINGS_ID}`)) return false;
-      const txt = (el.textContent || '').trim();
-      if (txt !== 'Send message' && txt !== 'Queued messages') return false;
+      if ((el.textContent || '').trim() !== 'Interface Layout') return false;
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0;
     });
-    if (!anchor) return null;
-    let cur = anchor.parentElement;
-    for (let i = 0; i < 6 && cur; i++, cur = cur.parentElement) {
-      const parent = cur.parentElement;
-      if (!parent) break;
-      const parentText = parent.textContent || '';
-      if (/Queued messages/i.test(parentText) && /Send message/i.test(parentText) && parent.children.length >= 2) {
-        return parent;
+    for (const h of headings) {
+      let cur = h.parentElement;
+      for (let i = 0; i < 4 && cur; i++, cur = cur.parentElement) {
+        const parent = cur.parentElement;
+        if (!parent) break;
+        const pr = parent.getBoundingClientRect();
+        if (pr.width <= 0 || pr.height <= 0) continue;
+        const txt = parent.textContent || '';
+        if (/Interface Layout/i.test(txt) && /Global Permissions/i.test(txt)) {
+          return { parent, beforeNode: cur };
+        }
       }
     }
     return null;
   };
 
   const ensureSettingsControl = () => {
+    const anchor = findInterfaceLayoutAnchor();
     const existingHost = document.getElementById(SETTINGS_ID);
-    if (existingHost) {
+    if (!anchor) {
+      if (existingHost) existingHost.remove();
+      return;
+    }
+    if (
+      existingHost &&
+      existingHost.isConnected &&
+      existingHost.parentElement === anchor.parent &&
+      existingHost.nextElementSibling === anchor.beforeNode
+    ) {
       updateSettingsUI(existingHost);
       return;
     }
-
-    const stack = findSettingsCardStack();
-    if (!stack) return;
+    if (existingHost) existingHost.remove();
 
     const host = document.createElement('div');
     host.id = SETTINGS_ID;
+    host.style.cssText = 'margin-bottom:16px;';
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
       <style>
@@ -410,7 +421,7 @@
       });
     }
 
-    stack.appendChild(host);
+    anchor.parent.insertBefore(host, anchor.beforeNode);
     updateSettingsUI(host);
   };
 
@@ -956,8 +967,17 @@
     });
   };
 
+  let settingsRetryTimer = null;
   const observer = new MutationObserver(() => {
-    if (!document.getElementById(PILL_ID) || !document.getElementById(SETTINGS_ID)) scheduleRender();
+    if (!document.getElementById(PILL_ID) || !document.getElementById(SETTINGS_ID)) {
+      scheduleRender();
+      if (!settingsRetryTimer) {
+        settingsRetryTimer = setTimeout(() => {
+          settingsRetryTimer = null;
+          ensureSettingsControl();
+        }, 120);
+      }
+    }
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   render();

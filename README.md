@@ -5,7 +5,7 @@
 一个极简、零第三方依赖的 **Google Antigravity** 输入框监控胶囊插件。  
 不改 `app.asar` 安装包 · 无侧边栏打扰 · 不自动杀进程 · 原生设置集成
 
-[![Version](https://img.shields.io/badge/version-1.0.1-6366f1?style=flat-square)](plugin.json)
+[![Version](https://img.shields.io/badge/version-1.0.2-6366f1?style=flat-square)](plugin.json)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#%E6%9E%81%E7%AE%80%E7%BB%93%E6%9E%84)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0ea5e9?style=flat-square)](#%E5%BF%AB%E9%80%9F%E5%AE%89%E8%A3%85)
 [![License: MIT](https://img.shields.io/badge/license-MIT-gray?style=flat-square)](LICENSE)
@@ -49,10 +49,10 @@
 
 ### ⚙️ 原生设置页开关
 
-直接集成在 Antigravity 原生 **`Settings → General → Input Box`** 中，支持独立开启或隐藏任意一个胶囊，设置自动持久化：
+直接集成在 Antigravity 原生 **`Settings → General`** 顶部（`Interface Layout` 正上方），支持独立开关 4 个胶囊以及一键 **`中文 | EN`** 切换，设置自动持久化：
 
 <div align="center">
-  <img src="docs/assets/settings.jpg" width="85%" alt="Settings Input Box Context Pills" />
+  <img src="docs/assets/settings-zh.png" width="85%" alt="Settings Context Pills (ZH)" />
 </div>
 
 ---

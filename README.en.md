@@ -5,7 +5,7 @@
 Minimalist, zero-dependency status pills right inside the **Google Antigravity** chat composer.  
 No `app.asar` patching · No sidebar clutter · No auto-kill relaunch · Native Settings integration
 
-[![Version](https://img.shields.io/badge/version-1.0.1-6366f1?style=flat-square)](plugin.json)
+[![Version](https://img.shields.io/badge/version-1.0.2-6366f1?style=flat-square)](plugin.json)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#structure)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0ea5e9?style=flat-square)](#quick-install)
 [![License: MIT](https://img.shields.io/badge/license-MIT-gray?style=flat-square)](LICENSE)
@@ -25,34 +25,34 @@ Four compact status pills sit cleanly to the left of `Turbo` in the chat compose
     <td width="50%" align="center">
       <strong>📊 Today's Usage</strong><br/>
       <sub>All conversations today · 3-segment breakdown · Session total</sub><br/><br/>
-      <img src="docs/assets/daily.png" alt="Today's Usage" />
+      <img src="docs/assets/daily-en.png" alt="Today's Usage" />
     </td>
     <td width="50%" align="center">
       <strong>⚡ Prompt Cache Hit</strong><br/>
       <sub>Turn cache hit rate · Read / Uncached / Output · Session avg</sub><br/><br/>
-      <img src="docs/assets/cache.png" alt="Prompt Cache Hit" />
+      <img src="docs/assets/cache-en.png" alt="Prompt Cache Hit" />
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <strong>🕒 Gemini 5h & Weekly Quota</strong><br/>
       <sub>5h remaining on pill · 5h & Weekly countdowns on hover</sub><br/><br/>
-      <img src="docs/assets/quota.png" alt="Gemini Quota" />
+      <img src="docs/assets/quota-en.png" alt="Gemini Quota" />
     </td>
     <td width="50%" align="center">
       <strong>○ Context Window</strong><br/>
       <sub>Used / Limit · Decode TPS · TTFT · Double-click to /compact</sub><br/><br/>
-      <img src="docs/assets/context.png" alt="Context Window" />
+      <img src="docs/assets/context-en.png" alt="Context Window" />
     </td>
   </tr>
 </table>
 
 ### ⚙️ Native Settings Integration
 
-Integrated directly into **`Settings → General → Input Box`** to toggle each pill individually:
+Integrated directly at the top of **`Settings → General`** (above `Interface Layout`) to toggle each pill and switch **`中文 | EN`** live:
 
 <div align="center">
-  <img src="docs/assets/settings.jpg" width="85%" alt="Settings Input Box Context Pills" />
+  <img src="docs/assets/settings-en.png" width="85%" alt="Settings Context Pills (EN)" />
 </div>
 
 ---
