@@ -1,0 +1,10 @@
+{
+  "command": "node",
+  "args": [
+    "--max-old-space-size=96",
+    "main.mjs"
+  ],
+  "restart_policy": "always",
+  "display_name": "Context Pill",
+  "description": "Injects a sleek context usage pill to the left of Turbo"
+}
