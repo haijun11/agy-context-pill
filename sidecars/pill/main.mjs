@@ -335,7 +335,7 @@ async function tick() {
   const payload = await collectContextMetrics();
   const json = JSON.stringify(payload);
   for (const conn of sockets.values()) {
-    cdpEval(conn, `if (window.__agCtxPillVersion !== 14) { ${WIDGET_CODE} } window.__agCtxPillUpdate?.(${json});`);
+    cdpEval(conn, `if (window.__agCtxPillVersion !== 15) { ${WIDGET_CODE} } window.__agCtxPillUpdate?.(${json});`);
   }
 }
 

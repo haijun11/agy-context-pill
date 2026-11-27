@@ -1,6 +1,6 @@
 (() => {
-  if (window.__agCtxPillVersion === 14) return;
-  window.__agCtxPillVersion = 14;
+  if (window.__agCtxPillVersion === 15) return;
+  window.__agCtxPillVersion = 15;
   window.__agCtxPillInstalled = true;
 
   const PILL_ID = 'ag-ctx-pill-host';
@@ -11,76 +11,77 @@
   document.getElementById(SETTINGS_ID)?.remove();
   document.getElementById('ag-effort-pill-host')?.remove();
 
-  const IS_ZH = /^zh/i.test(document.documentElement.lang || navigator.language || '');
-  const L = IS_ZH
-    ? {
-        settingsDesc: '选择要在输入框右下角显示的监控胶囊',
-        btnDaily: '今日用量',
-        btnCache: '缓存命中',
-        btnQuota: '5h额度',
-        btnContext: '上下文占比',
-        dailyTitle: '今日用量',
-        reqsSuffix: (n) => `${n} 次请求`,
-        dailyRead: '缓存读取',
-        dailyMiss: '未命中输入',
-        dailyOut: '输出 Token',
-        sessionTotal: '当前会话累计',
-        cacheTitle: 'Prompt 缓存命中',
-        cacheRead: '本轮缓存读取',
-        cacheMiss: '本轮未命中',
-        cacheOut: '本轮输出',
-        cacheAvg: '会话平均命中',
-        quota5h: 'Gemini 5h 额度',
-        quotaWeek: 'Gemini 周额度',
-        resetCd: '重置倒计时',
-        resetAt: '重置时间',
-        sharedModels: '共享池模型',
-        ctxTitle: '上下文窗口',
-        ctxRem: '剩余可用',
-        ctxTps: '解码速度',
-        ctxTtft: '首字延迟',
-        newConv: '新对话',
-        zeroReqs: '0 轮',
-        compactHint: '双击胶囊压缩上下文',
-        clearInputFirst: '请先清空输入框再双击压缩',
-        resetSoon: '即将重置',
-        after: (s) => `${s} 后`,
-      }
-    : {
-        settingsDesc: 'Choose which status pills appear near the chat composer',
-        btnDaily: 'Daily',
-        btnCache: 'Cache',
-        btnQuota: '5h Quota',
-        btnContext: 'Context',
-        dailyTitle: "Today's Usage",
-        reqsSuffix: (n) => `${n} reqs`,
-        dailyRead: 'Cache Read',
-        dailyMiss: 'Uncached',
-        dailyOut: 'Output',
-        sessionTotal: 'This Session',
-        cacheTitle: 'Prompt Cache Hit',
-        cacheRead: 'Cache Read',
-        cacheMiss: 'Uncached',
-        cacheOut: 'Output',
-        cacheAvg: 'Session Avg',
-        quota5h: 'Gemini 5h Quota',
-        quotaWeek: 'Gemini Weekly Quota',
-        resetCd: 'Resets in',
-        resetAt: 'Reset time',
-        sharedModels: 'Shared Models',
-        ctxTitle: 'Context Window',
-        ctxRem: 'Remaining',
-        ctxTps: 'Decode Speed',
-        ctxTtft: 'TTFT',
-        newConv: 'New chat',
-        zeroReqs: '0 reqs',
-        compactHint: 'Double-click to /compact',
-        clearInputFirst: 'Clear input box before double-clicking',
-        resetSoon: 'Resetting soon',
-        after: (s) => `in ${s}`,
-      };
+  const STRINGS = {
+    zh: {
+      settingsDesc: '选择要在输入框右下角显示的监控胶囊',
+      btnDaily: '今日用量',
+      btnCache: '缓存命中',
+      btnQuota: '5h额度',
+      btnContext: '上下文占比',
+      dailyTitle: '今日用量',
+      reqsSuffix: (n) => `${n} 次请求`,
+      dailyRead: '缓存读取',
+      dailyMiss: '未命中输入',
+      dailyOut: '输出 Token',
+      sessionTotal: '当前会话累计',
+      cacheTitle: 'Prompt 缓存命中',
+      cacheRead: '本轮缓存读取',
+      cacheMiss: '本轮未命中',
+      cacheOut: '本轮输出',
+      cacheAvg: '会话平均命中',
+      quota5h: 'Gemini 5h 额度',
+      quotaWeek: 'Gemini 周额度',
+      resetCd: '重置倒计时',
+      resetAt: '重置时间',
+      sharedModels: '共享池模型',
+      ctxTitle: '上下文窗口',
+      ctxRem: '剩余可用',
+      ctxTps: '解码速度',
+      ctxTtft: '首字延迟',
+      newConv: '新对话',
+      zeroReqs: '0 轮',
+      compactHint: '双击胶囊压缩上下文',
+      clearInputFirst: '请先清空输入框再双击压缩',
+      resetSoon: '即将重置',
+      after: (s) => `${s} 后`,
+    },
+    en: {
+      settingsDesc: 'Choose which status pills appear near the chat composer',
+      btnDaily: 'Daily',
+      btnCache: 'Cache',
+      btnQuota: '5h Quota',
+      btnContext: 'Context',
+      dailyTitle: "Today's Usage",
+      reqsSuffix: (n) => `${n} reqs`,
+      dailyRead: 'Cache Read',
+      dailyMiss: 'Uncached',
+      dailyOut: 'Output',
+      sessionTotal: 'This Session',
+      cacheTitle: 'Prompt Cache Hit',
+      cacheRead: 'Cache Read',
+      cacheMiss: 'Uncached',
+      cacheOut: 'Output',
+      cacheAvg: 'Session Avg',
+      quota5h: 'Gemini 5h Quota',
+      quotaWeek: 'Gemini Weekly Quota',
+      resetCd: 'Resets in',
+      resetAt: 'Reset time',
+      sharedModels: 'Shared Models',
+      ctxTitle: 'Context Window',
+      ctxRem: 'Remaining',
+      ctxTps: 'Decode Speed',
+      ctxTtft: 'TTFT',
+      newConv: 'New chat',
+      zeroReqs: '0 reqs',
+      compactHint: 'Double-click to /compact',
+      clearInputFirst: 'Clear input box before double-clicking',
+      resetSoon: 'Resetting soon',
+      after: (s) => `in ${s}`,
+    },
+  };
 
   const loadPrefs = () => {
+    const defaultLang = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
     try {
       const raw = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
       return {
@@ -88,9 +89,10 @@
         cache: raw.cache !== false,
         quota: raw.quota !== false,
         context: raw.context !== false,
+        lang: raw.lang === 'zh' || raw.lang === 'en' ? raw.lang : defaultLang,
       };
     } catch {
-      return { daily: true, cache: true, quota: true, context: true };
+      return { daily: true, cache: true, quota: true, context: true, lang: defaultLang };
     }
   };
 
@@ -102,6 +104,7 @@
 
   let prefs = loadPrefs();
   let latestPayload = null;
+  const t = () => STRINGS[prefs.lang] || STRINGS.zh;
 
   const formatTokens = (n) => {
     if (!Number.isFinite(n) || n <= 0) return '0';
@@ -116,6 +119,7 @@
   };
 
   const formatCountdown = (iso) => {
+    const L = t();
     if (!iso) return '—';
     const ms = new Date(iso).getTime() - Date.now();
     if (!Number.isFinite(ms)) return '—';
@@ -204,6 +208,7 @@
   };
 
   const triggerCompact = async (ctxPillEl, tipModelEl) => {
+    const L = t();
     const editor = findActiveEditor();
     if (!editor) return;
     const currentText = (editor.tagName === 'TEXTAREA' ? editor.value : editor.textContent || '').trim();
@@ -254,49 +259,58 @@
     }
   };
 
-  const ensureSettingsControl = () => {
-    const headings = [...document.querySelectorAll('*')].filter((el) => {
+  const findSettingsCardStack = () => {
+    const anchor = [...document.querySelectorAll('*')].find((el) => {
       if (el.children.length > 0 || el.closest(`#${SETTINGS_ID}`)) return false;
-      return (el.textContent || '').trim() === 'Input Box';
-    });
-    const inputBoxHeading = headings.find((el) => {
+      const txt = (el.textContent || '').trim();
+      if (txt !== 'Send message' && txt !== 'Queued messages') return false;
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0;
     });
-    if (!inputBoxHeading) return;
+    if (!anchor) return null;
+    let cur = anchor.parentElement;
+    for (let i = 0; i < 6 && cur; i++, cur = cur.parentElement) {
+      const parent = cur.parentElement;
+      if (!parent) break;
+      const parentText = parent.textContent || '';
+      if (/Queued messages/i.test(parentText) && /Send message/i.test(parentText) && parent.children.length >= 2) {
+        return parent;
+      }
+    }
+    return null;
+  };
 
-    const section = inputBoxHeading.parentElement;
-    if (!section) return;
-    let cardList = section.querySelector(`#${SETTINGS_ID}`);
-    if (cardList) {
-      updateSettingsUI(cardList);
+  const ensureSettingsControl = () => {
+    const existingHost = document.getElementById(SETTINGS_ID);
+    if (existingHost) {
+      updateSettingsUI(existingHost);
       return;
     }
 
-    const container =
-      [...section.children].find((c) => c !== inputBoxHeading && /Send message|Queued messages/i.test(c.textContent || '')) ||
-      section;
+    const stack = findSettingsCardStack();
+    if (!stack) return;
 
     const host = document.createElement('div');
     host.id = SETTINGS_ID;
-    host.style.cssText = 'margin-top:8px;';
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
       <style>
         :host {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           display: block;
+          width: 100%;
         }
         .row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
+          gap: 14px;
           padding: 12px 14px;
           border-radius: 12px;
           border: 1px solid rgba(128, 128, 128, 0.20);
           background: rgba(128, 128, 128, 0.02);
           color: inherit;
+          box-sizing: border-box;
         }
         .info {
           min-width: 0;
@@ -312,6 +326,14 @@
           margin-top: 2px;
           line-height: 1.35;
         }
+        .controls {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
         .seg {
           display: inline-flex;
           align-items: center;
@@ -320,7 +342,6 @@
           border-radius: 10px;
           border: 1px solid rgba(128, 128, 128, 0.22);
           background: rgba(128, 128, 128, 0.06);
-          flex-shrink: 0;
         }
         .seg-btn {
           border: none;
@@ -330,7 +351,7 @@
           font-family: inherit;
           font-size: 12px;
           font-weight: 500;
-          padding: 5px 10px;
+          padding: 5px 9px;
           border-radius: 7px;
           cursor: pointer;
           transition: background 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
@@ -351,18 +372,24 @@
       <div class="row" id="row">
         <div class="info">
           <div class="title">Context Pills</div>
-          <div class="desc">${L.settingsDesc}</div>
+          <div class="desc" id="desc"></div>
         </div>
-        <div class="seg" role="group" aria-label="Context Pills">
-          <button type="button" class="seg-btn" data-key="daily">${L.btnDaily}</button>
-          <button type="button" class="seg-btn" data-key="cache">${L.btnCache}</button>
-          <button type="button" class="seg-btn" data-key="quota">${L.btnQuota}</button>
-          <button type="button" class="seg-btn" data-key="context">${L.btnContext}</button>
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Context Pills">
+            <button type="button" class="seg-btn" data-key="daily" id="btn-daily"></button>
+            <button type="button" class="seg-btn" data-key="cache" id="btn-cache"></button>
+            <button type="button" class="seg-btn" data-key="quota" id="btn-quota"></button>
+            <button type="button" class="seg-btn" data-key="context" id="btn-context"></button>
+          </div>
+          <div class="seg" role="group" aria-label="Language">
+            <button type="button" class="seg-btn" data-lang="zh">中文</button>
+            <button type="button" class="seg-btn" data-lang="en">EN</button>
+          </div>
         </div>
       </div>
     `;
 
-    for (const btn of shadow.querySelectorAll('.seg-btn')) {
+    for (const btn of shadow.querySelectorAll('[data-key]')) {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const k = btn.dataset.key;
@@ -373,17 +400,36 @@
       });
     }
 
-    container.appendChild(host);
+    for (const btn of shadow.querySelectorAll('[data-lang]')) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        prefs = { ...prefs, lang: btn.dataset.lang };
+        savePrefs(prefs);
+        updateSettingsUI(host);
+        render();
+      });
+    }
+
+    stack.appendChild(host);
     updateSettingsUI(host);
   };
 
   const updateSettingsUI = (host) => {
     const s = host?.shadowRoot;
     if (!s) return;
+    const L = t();
     s.getElementById('row')?.classList.toggle('dark', isDarkTheme());
-    for (const btn of s.querySelectorAll('.seg-btn')) {
-      const k = btn.dataset.key;
-      btn.classList.toggle('on', Boolean(prefs[k]));
+    s.getElementById('desc').textContent = L.settingsDesc;
+    s.getElementById('btn-daily').textContent = L.btnDaily;
+    s.getElementById('btn-cache').textContent = L.btnCache;
+    s.getElementById('btn-quota').textContent = L.btnQuota;
+    s.getElementById('btn-context').textContent = L.btnContext;
+
+    for (const btn of s.querySelectorAll('[data-key]')) {
+      btn.classList.toggle('on', Boolean(prefs[btn.dataset.key]));
+    }
+    for (const btn of s.querySelectorAll('[data-lang]')) {
+      btn.classList.toggle('on', prefs.lang === btn.dataset.lang);
     }
   };
 
@@ -581,7 +627,7 @@
           <span class="pct" id="daily-total">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">${L.dailyTitle}</span>
+              <span class="tip-title" id="lbl-daily-title"></span>
               <span class="tip-badge" id="daily-reqs">—</span>
             </div>
             <div class="tip-bar">
@@ -590,12 +636,12 @@
               <div class="tip-fill seg-out" id="daily-seg-out" style="width:0%"></div>
             </div>
             <div class="tip-grid">
-              <span class="tip-k"><i class="dot" style="background:#10b981"></i>${L.dailyRead}</span><span class="tip-v" id="daily-read">—</span>
-              <span class="tip-k"><i class="dot" style="background:#f59e0b"></i>${L.dailyMiss}</span><span class="tip-v" id="daily-miss">—</span>
-              <span class="tip-k"><i class="dot" style="background:#6366f1"></i>${L.dailyOut}</span><span class="tip-v" id="daily-out">—</span>
+              <span class="tip-k"><i class="dot" style="background:#10b981"></i><span id="lbl-daily-read"></span></span><span class="tip-v" id="daily-read">—</span>
+              <span class="tip-k"><i class="dot" style="background:#f59e0b"></i><span id="lbl-daily-miss"></span></span><span class="tip-v" id="daily-miss">—</span>
+              <span class="tip-k"><i class="dot" style="background:#6366f1"></i><span id="lbl-daily-out"></span></span><span class="tip-v" id="daily-out">—</span>
             </div>
             <div class="tip-foot">
-              <span>${L.sessionTotal}</span>
+              <span id="lbl-session-total"></span>
               <span id="daily-session-total">—</span>
             </div>
           </div>
@@ -609,17 +655,17 @@
           <span class="pct" id="cache-pct">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">${L.cacheTitle}</span>
+              <span class="tip-title" id="lbl-cache-title"></span>
               <span class="tip-badge" id="cache-tip-rate">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="cache-tip-fill" style="width:0%"></div></div>
             <div class="tip-grid">
-              <span class="tip-k">${L.cacheRead}</span><span class="tip-v" id="cache-tip-read">—</span>
-              <span class="tip-k">${L.cacheMiss}</span><span class="tip-v" id="cache-tip-miss">—</span>
-              <span class="tip-k">${L.cacheOut}</span><span class="tip-v" id="cache-tip-out">—</span>
+              <span class="tip-k" id="lbl-cache-read"></span><span class="tip-v" id="cache-tip-read">—</span>
+              <span class="tip-k" id="lbl-cache-miss"></span><span class="tip-v" id="cache-tip-miss">—</span>
+              <span class="tip-k" id="lbl-cache-out"></span><span class="tip-v" id="cache-tip-out">—</span>
             </div>
             <div class="tip-foot">
-              <span>${L.cacheAvg}</span>
+              <span id="lbl-cache-avg"></span>
               <span id="cache-tip-avg">—</span>
             </div>
           </div>
@@ -634,25 +680,25 @@
           <span class="pct" id="quota-pct">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">${L.quota5h}</span>
+              <span class="tip-title" id="lbl-quota-5h"></span>
               <span class="tip-badge" id="quota-tip-rate">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="quota-tip-fill" style="width:0%"></div></div>
             <div class="tip-grid" style="margin-bottom:8px;">
-              <span class="tip-k">${L.resetCd}</span><span class="tip-v" id="quota-tip-cd">—</span>
-              <span class="tip-k">${L.resetAt}</span><span class="tip-v" id="quota-tip-at">—</span>
+              <span class="tip-k" id="lbl-reset-cd-1"></span><span class="tip-v" id="quota-tip-cd">—</span>
+              <span class="tip-k" id="lbl-reset-at-1"></span><span class="tip-v" id="quota-tip-at">—</span>
             </div>
             <div class="tip-head">
-              <span class="tip-title">${L.quotaWeek}</span>
+              <span class="tip-title" id="lbl-quota-wk"></span>
               <span class="tip-badge" id="quota-wk-rate">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="quota-wk-fill" style="width:0%"></div></div>
             <div class="tip-grid">
-              <span class="tip-k">${L.resetCd}</span><span class="tip-v" id="quota-wk-cd">—</span>
-              <span class="tip-k">${L.resetAt}</span><span class="tip-v" id="quota-wk-at">—</span>
+              <span class="tip-k" id="lbl-reset-cd-2"></span><span class="tip-v" id="quota-wk-cd">—</span>
+              <span class="tip-k" id="lbl-reset-at-2"></span><span class="tip-v" id="quota-wk-at">—</span>
             </div>
             <div class="tip-foot">
-              <span>${L.sharedModels}</span>
+              <span id="lbl-shared-models"></span>
               <span id="quota-tip-models">—</span>
             </div>
           </div>
@@ -667,20 +713,20 @@
           <span class="pct" id="ctx-pct">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">${L.ctxTitle}</span>
+              <span class="tip-title" id="lbl-ctx-title"></span>
               <span class="tip-badge" id="ctx-tip-tokens">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="ctx-tip-fill" style="width:0%"></div></div>
             <div class="tip-grid">
-              <span class="tip-k">${L.ctxRem}</span><span class="tip-v" id="ctx-tip-rem">—</span>
-              <span class="tip-k">${L.ctxTps}</span><span class="tip-v" id="ctx-tip-tps">—</span>
-              <span class="tip-k">${L.ctxTtft}</span><span class="tip-v" id="ctx-tip-ttft">—</span>
+              <span class="tip-k" id="lbl-ctx-rem"></span><span class="tip-v" id="ctx-tip-rem">—</span>
+              <span class="tip-k" id="lbl-ctx-tps"></span><span class="tip-v" id="ctx-tip-tps">—</span>
+              <span class="tip-k" id="lbl-ctx-ttft"></span><span class="tip-v" id="ctx-tip-ttft">—</span>
             </div>
             <div class="tip-foot">
               <span class="tip-model" id="ctx-tip-model">Waiting…</span>
               <span id="ctx-tip-reqs">—</span>
             </div>
-            <div style="margin-top:4px;font-size:10px;opacity:0.5;text-align:right;">${L.compactHint}</div>
+            <div id="lbl-compact-hint" style="margin-top:4px;font-size:10px;opacity:0.5;text-align:right;"></div>
           </div>
         </div>
       </div>
@@ -711,12 +757,41 @@
     return latestPayload.latest || null;
   };
 
+  const applyLocaleLabels = (s) => {
+    const L = t();
+    s.getElementById('lbl-daily-title').textContent = L.dailyTitle;
+    s.getElementById('lbl-daily-read').textContent = L.dailyRead;
+    s.getElementById('lbl-daily-miss').textContent = L.dailyMiss;
+    s.getElementById('lbl-daily-out').textContent = L.dailyOut;
+    s.getElementById('lbl-session-total').textContent = L.sessionTotal;
+    s.getElementById('lbl-cache-title').textContent = L.cacheTitle;
+    s.getElementById('lbl-cache-read').textContent = L.cacheRead;
+    s.getElementById('lbl-cache-miss').textContent = L.cacheMiss;
+    s.getElementById('lbl-cache-out').textContent = L.cacheOut;
+    s.getElementById('lbl-cache-avg').textContent = L.cacheAvg;
+    s.getElementById('lbl-quota-5h').textContent = L.quota5h;
+    s.getElementById('lbl-quota-wk').textContent = L.quotaWeek;
+    s.getElementById('lbl-reset-cd-1').textContent = L.resetCd;
+    s.getElementById('lbl-reset-at-1').textContent = L.resetAt;
+    s.getElementById('lbl-reset-cd-2').textContent = L.resetCd;
+    s.getElementById('lbl-reset-at-2').textContent = L.resetAt;
+    s.getElementById('lbl-shared-models').textContent = L.sharedModels;
+    s.getElementById('lbl-ctx-title').textContent = L.ctxTitle;
+    s.getElementById('lbl-ctx-rem').textContent = L.ctxRem;
+    s.getElementById('lbl-ctx-tps').textContent = L.ctxTps;
+    s.getElementById('lbl-ctx-ttft').textContent = L.ctxTtft;
+    s.getElementById('lbl-compact-hint').textContent = L.compactHint;
+  };
+
   const render = () => {
     ensureSettingsControl();
 
     const host = ensurePill();
     if (!host || !host.shadowRoot) return;
     const s = host.shadowRoot;
+    const L = t();
+    applyLocaleLabels(s);
+
     const group = s.getElementById('group');
     const dark = isDarkTheme();
     group.classList.toggle('dark', dark);
