@@ -1,6 +1,6 @@
 (() => {
-  if (window.__agCtxPillVersion === 13) return;
-  window.__agCtxPillVersion = 13;
+  if (window.__agCtxPillVersion === 14) return;
+  window.__agCtxPillVersion = 14;
   window.__agCtxPillInstalled = true;
 
   const PILL_ID = 'ag-ctx-pill-host';
@@ -10,6 +10,75 @@
   document.getElementById(PILL_ID)?.remove();
   document.getElementById(SETTINGS_ID)?.remove();
   document.getElementById('ag-effort-pill-host')?.remove();
+
+  const IS_ZH = /^zh/i.test(document.documentElement.lang || navigator.language || '');
+  const L = IS_ZH
+    ? {
+        settingsDesc: '选择要在输入框右下角显示的监控胶囊',
+        btnDaily: '今日用量',
+        btnCache: '缓存命中',
+        btnQuota: '5h额度',
+        btnContext: '上下文占比',
+        dailyTitle: '今日用量',
+        reqsSuffix: (n) => `${n} 次请求`,
+        dailyRead: '缓存读取',
+        dailyMiss: '未命中输入',
+        dailyOut: '输出 Token',
+        sessionTotal: '当前会话累计',
+        cacheTitle: 'Prompt 缓存命中',
+        cacheRead: '本轮缓存读取',
+        cacheMiss: '本轮未命中',
+        cacheOut: '本轮输出',
+        cacheAvg: '会话平均命中',
+        quota5h: 'Gemini 5h 额度',
+        quotaWeek: 'Gemini 周额度',
+        resetCd: '重置倒计时',
+        resetAt: '重置时间',
+        sharedModels: '共享池模型',
+        ctxTitle: '上下文窗口',
+        ctxRem: '剩余可用',
+        ctxTps: '解码速度',
+        ctxTtft: '首字延迟',
+        newConv: '新对话',
+        zeroReqs: '0 轮',
+        compactHint: '双击胶囊压缩上下文',
+        clearInputFirst: '请先清空输入框再双击压缩',
+        resetSoon: '即将重置',
+        after: (s) => `${s} 后`,
+      }
+    : {
+        settingsDesc: 'Choose which status pills appear near the chat composer',
+        btnDaily: 'Daily',
+        btnCache: 'Cache',
+        btnQuota: '5h Quota',
+        btnContext: 'Context',
+        dailyTitle: "Today's Usage",
+        reqsSuffix: (n) => `${n} reqs`,
+        dailyRead: 'Cache Read',
+        dailyMiss: 'Uncached',
+        dailyOut: 'Output',
+        sessionTotal: 'This Session',
+        cacheTitle: 'Prompt Cache Hit',
+        cacheRead: 'Cache Read',
+        cacheMiss: 'Uncached',
+        cacheOut: 'Output',
+        cacheAvg: 'Session Avg',
+        quota5h: 'Gemini 5h Quota',
+        quotaWeek: 'Gemini Weekly Quota',
+        resetCd: 'Resets in',
+        resetAt: 'Reset time',
+        sharedModels: 'Shared Models',
+        ctxTitle: 'Context Window',
+        ctxRem: 'Remaining',
+        ctxTps: 'Decode Speed',
+        ctxTtft: 'TTFT',
+        newConv: 'New chat',
+        zeroReqs: '0 reqs',
+        compactHint: 'Double-click to /compact',
+        clearInputFirst: 'Clear input box before double-clicking',
+        resetSoon: 'Resetting soon',
+        after: (s) => `in ${s}`,
+      };
 
   const loadPrefs = () => {
     try {
@@ -50,13 +119,13 @@
     if (!iso) return '—';
     const ms = new Date(iso).getTime() - Date.now();
     if (!Number.isFinite(ms)) return '—';
-    if (ms <= 0) return '即将重置';
+    if (ms <= 0) return L.resetSoon;
     const totalMin = Math.floor(ms / 60_000);
     const d = Math.floor(totalMin / 1440);
     const h = Math.floor((totalMin % 1440) / 60);
     const m = totalMin % 60;
-    if (d > 0) return `${d}d ${h}h 后`;
-    return h > 0 ? `${h}h ${m}m 后` : `${m}m 后`;
+    if (d > 0) return L.after(`${d}d ${h}h`);
+    return h > 0 ? L.after(`${h}h ${m}m`) : L.after(`${m}m`);
   };
 
   const formatClock = (iso, withDate = false) => {
@@ -113,6 +182,27 @@
     return editors[editors.length - 1] || null;
   };
 
+  const findTurboAnchor = () => {
+    const editors = [...document.querySelectorAll('[contenteditable="true"], textarea')].filter((el) => {
+      if (el.closest(`#${PILL_ID}`) || el.closest(`#${SETTINGS_ID}`)) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 120 && r.height > 16;
+    });
+    for (const editor of editors) {
+      let box = editor.parentElement;
+      for (let i = 0; i < 6 && box; i++, box = box.parentElement) {
+        const btns = [...box.querySelectorAll('button, [role="button"]')].filter((b) => {
+          if (b.id === PILL_ID || b.closest(`#${PILL_ID}`)) return false;
+          const r = b.getBoundingClientRect();
+          return r.width > 20 && r.height > 14 && r.height < 44;
+        });
+        const turbo = btns.find((b) => /\b(Turbo|Auto|Review|Ask|Proceed)\b/i.test((b.textContent || '').trim()));
+        if (turbo && turbo.parentElement) return turbo;
+      }
+    }
+    return null;
+  };
+
   const triggerCompact = async (ctxPillEl, tipModelEl) => {
     const editor = findActiveEditor();
     if (!editor) return;
@@ -120,7 +210,7 @@
     if (currentText.length > 0) {
       if (tipModelEl) {
         const prev = tipModelEl.textContent;
-        tipModelEl.textContent = '请先清空输入框再双击压缩';
+        tipModelEl.textContent = L.clearInputFirst;
         setTimeout(() => { if (tipModelEl) tipModelEl.textContent = prev; }, 1800);
       }
       return;
@@ -148,7 +238,7 @@
     await new Promise((r) => setTimeout(r, 150));
     editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
     await new Promise((r) => setTimeout(r, 140));
-    const { turbo } = findTurboAnchor() ? { turbo: findTurboAnchor() } : { turbo: null };
+    const turbo = findTurboAnchor();
     const bar = turbo?.parentElement;
     const sendBtn = bar
       ? [...bar.querySelectorAll('button, [role="button"]')].filter((b) => {
@@ -162,27 +252,6 @@
     } else {
       editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
     }
-  };
-
-  const findTurboAnchor = () => {
-    const editors = [...document.querySelectorAll('[contenteditable="true"], textarea')].filter((el) => {
-      if (el.closest(`#${PILL_ID}`) || el.closest(`#${SETTINGS_ID}`)) return false;
-      const r = el.getBoundingClientRect();
-      return r.width > 120 && r.height > 16;
-    });
-    for (const editor of editors) {
-      let box = editor.parentElement;
-      for (let i = 0; i < 6 && box; i++, box = box.parentElement) {
-        const btns = [...box.querySelectorAll('button, [role="button"]')].filter((b) => {
-          if (b.id === PILL_ID || b.closest(`#${PILL_ID}`)) return false;
-          const r = b.getBoundingClientRect();
-          return r.width > 20 && r.height > 14 && r.height < 44;
-        });
-        const turbo = btns.find((b) => /\b(Turbo|Auto|Review|Ask|Proceed)\b/i.test((b.textContent || '').trim()));
-        if (turbo && turbo.parentElement) return turbo;
-      }
-    }
-    return null;
   };
 
   const ensureSettingsControl = () => {
@@ -282,13 +351,13 @@
       <div class="row" id="row">
         <div class="info">
           <div class="title">Context Pills</div>
-          <div class="desc">选择要在输入框右下角显示的监控胶囊</div>
+          <div class="desc">${L.settingsDesc}</div>
         </div>
         <div class="seg" role="group" aria-label="Context Pills">
-          <button type="button" class="seg-btn" data-key="daily">今日用量</button>
-          <button type="button" class="seg-btn" data-key="cache">缓存命中</button>
-          <button type="button" class="seg-btn" data-key="quota">5h额度</button>
-          <button type="button" class="seg-btn" data-key="context">上下文占比</button>
+          <button type="button" class="seg-btn" data-key="daily">${L.btnDaily}</button>
+          <button type="button" class="seg-btn" data-key="cache">${L.btnCache}</button>
+          <button type="button" class="seg-btn" data-key="quota">${L.btnQuota}</button>
+          <button type="button" class="seg-btn" data-key="context">${L.btnContext}</button>
         </div>
       </div>
     `;
@@ -512,8 +581,8 @@
           <span class="pct" id="daily-total">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">今日用量</span>
-              <span class="tip-badge" id="daily-reqs">— 次请求</span>
+              <span class="tip-title">${L.dailyTitle}</span>
+              <span class="tip-badge" id="daily-reqs">—</span>
             </div>
             <div class="tip-bar">
               <div class="tip-fill seg-read" id="daily-seg-read" style="width:0%"></div>
@@ -521,12 +590,12 @@
               <div class="tip-fill seg-out" id="daily-seg-out" style="width:0%"></div>
             </div>
             <div class="tip-grid">
-              <span class="tip-k"><i class="dot" style="background:#10b981"></i>缓存读取</span><span class="tip-v" id="daily-read">—</span>
-              <span class="tip-k"><i class="dot" style="background:#f59e0b"></i>未命中输入</span><span class="tip-v" id="daily-miss">—</span>
-              <span class="tip-k"><i class="dot" style="background:#6366f1"></i>输出 Token</span><span class="tip-v" id="daily-out">—</span>
+              <span class="tip-k"><i class="dot" style="background:#10b981"></i>${L.dailyRead}</span><span class="tip-v" id="daily-read">—</span>
+              <span class="tip-k"><i class="dot" style="background:#f59e0b"></i>${L.dailyMiss}</span><span class="tip-v" id="daily-miss">—</span>
+              <span class="tip-k"><i class="dot" style="background:#6366f1"></i>${L.dailyOut}</span><span class="tip-v" id="daily-out">—</span>
             </div>
             <div class="tip-foot">
-              <span>当前会话累计</span>
+              <span>${L.sessionTotal}</span>
               <span id="daily-session-total">—</span>
             </div>
           </div>
@@ -540,17 +609,17 @@
           <span class="pct" id="cache-pct">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">Prompt 缓存命中</span>
+              <span class="tip-title">${L.cacheTitle}</span>
               <span class="tip-badge" id="cache-tip-rate">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="cache-tip-fill" style="width:0%"></div></div>
             <div class="tip-grid">
-              <span class="tip-k">本轮缓存读取</span><span class="tip-v" id="cache-tip-read">—</span>
-              <span class="tip-k">本轮未命中</span><span class="tip-v" id="cache-tip-miss">—</span>
-              <span class="tip-k">本轮输出</span><span class="tip-v" id="cache-tip-out">—</span>
+              <span class="tip-k">${L.cacheRead}</span><span class="tip-v" id="cache-tip-read">—</span>
+              <span class="tip-k">${L.cacheMiss}</span><span class="tip-v" id="cache-tip-miss">—</span>
+              <span class="tip-k">${L.cacheOut}</span><span class="tip-v" id="cache-tip-out">—</span>
             </div>
             <div class="tip-foot">
-              <span>会话平均命中</span>
+              <span>${L.cacheAvg}</span>
               <span id="cache-tip-avg">—</span>
             </div>
           </div>
@@ -565,25 +634,25 @@
           <span class="pct" id="quota-pct">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">Gemini 5h 额度</span>
+              <span class="tip-title">${L.quota5h}</span>
               <span class="tip-badge" id="quota-tip-rate">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="quota-tip-fill" style="width:0%"></div></div>
             <div class="tip-grid" style="margin-bottom:8px;">
-              <span class="tip-k">重置倒计时</span><span class="tip-v" id="quota-tip-cd">—</span>
-              <span class="tip-k">重置时间</span><span class="tip-v" id="quota-tip-at">—</span>
+              <span class="tip-k">${L.resetCd}</span><span class="tip-v" id="quota-tip-cd">—</span>
+              <span class="tip-k">${L.resetAt}</span><span class="tip-v" id="quota-tip-at">—</span>
             </div>
             <div class="tip-head">
-              <span class="tip-title">Gemini 周额度</span>
+              <span class="tip-title">${L.quotaWeek}</span>
               <span class="tip-badge" id="quota-wk-rate">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="quota-wk-fill" style="width:0%"></div></div>
             <div class="tip-grid">
-              <span class="tip-k">重置倒计时</span><span class="tip-v" id="quota-wk-cd">—</span>
-              <span class="tip-k">重置时间</span><span class="tip-v" id="quota-wk-at">—</span>
+              <span class="tip-k">${L.resetCd}</span><span class="tip-v" id="quota-wk-cd">—</span>
+              <span class="tip-k">${L.resetAt}</span><span class="tip-v" id="quota-wk-at">—</span>
             </div>
             <div class="tip-foot">
-              <span>共享池模型</span>
+              <span>${L.sharedModels}</span>
               <span id="quota-tip-models">—</span>
             </div>
           </div>
@@ -598,20 +667,20 @@
           <span class="pct" id="ctx-pct">—</span>
           <div class="tip">
             <div class="tip-head">
-              <span class="tip-title">上下文窗口</span>
+              <span class="tip-title">${L.ctxTitle}</span>
               <span class="tip-badge" id="ctx-tip-tokens">—</span>
             </div>
             <div class="tip-bar"><div class="tip-fill" id="ctx-tip-fill" style="width:0%"></div></div>
             <div class="tip-grid">
-              <span class="tip-k">剩余可用</span><span class="tip-v" id="ctx-tip-rem">—</span>
-              <span class="tip-k">解码速度</span><span class="tip-v" id="ctx-tip-tps">—</span>
-              <span class="tip-k">首字延迟</span><span class="tip-v" id="ctx-tip-ttft">—</span>
+              <span class="tip-k">${L.ctxRem}</span><span class="tip-v" id="ctx-tip-rem">—</span>
+              <span class="tip-k">${L.ctxTps}</span><span class="tip-v" id="ctx-tip-tps">—</span>
+              <span class="tip-k">${L.ctxTtft}</span><span class="tip-v" id="ctx-tip-ttft">—</span>
             </div>
             <div class="tip-foot">
               <span class="tip-model" id="ctx-tip-model">Waiting…</span>
               <span id="ctx-tip-reqs">—</span>
             </div>
-            <div style="margin-top:4px;font-size:10px;opacity:0.5;text-align:right;">双击胶囊压缩上下文</div>
+            <div style="margin-top:4px;font-size:10px;opacity:0.5;text-align:right;">${L.compactHint}</div>
           </div>
         </div>
       </div>
@@ -665,7 +734,7 @@
     // Daily
     const daily = latestPayload?.daily;
     s.getElementById('daily-total').textContent = daily ? formatTokens(daily.totalTokens) : '—';
-    s.getElementById('daily-reqs').textContent = daily ? `${daily.requests} 次请求` : '—';
+    s.getElementById('daily-reqs').textContent = daily ? L.reqsSuffix(daily.requests) : '—';
     if (daily && daily.totalTokens > 0) {
       s.getElementById('daily-seg-read').style.width = `${(daily.cacheRead / daily.totalTokens) * 100}%`;
       s.getElementById('daily-seg-miss').style.width = `${(daily.uncached / daily.totalTokens) * 100}%`;
@@ -750,8 +819,8 @@
       s.getElementById('ctx-tip-rem').textContent = '—';
       s.getElementById('ctx-tip-tps').textContent = '—';
       s.getElementById('ctx-tip-ttft').textContent = '—';
-      s.getElementById('ctx-tip-model').textContent = '新对话';
-      s.getElementById('ctx-tip-reqs').textContent = '0 轮';
+      s.getElementById('ctx-tip-model').textContent = L.newConv;
+      s.getElementById('ctx-tip-reqs').textContent = L.zeroReqs;
 
       cachePctEl.textContent = '—';
       s.getElementById('cache-tip-rate').textContent = '—';
@@ -778,7 +847,7 @@
     s.getElementById('ctx-tip-tps').textContent = Number.isFinite(d.tps) ? `${Math.round(d.tps)} tok/s` : '—';
     s.getElementById('ctx-tip-ttft').textContent = Number.isFinite(d.ttftSec) ? `${d.ttftSec.toFixed(1)}s` : '—';
     s.getElementById('ctx-tip-model').textContent = d.modelLabel || 'Active session';
-    s.getElementById('ctx-tip-reqs').textContent = `${d.sessionRequests || 0} 次请求`;
+    s.getElementById('ctx-tip-reqs').textContent = L.reqsSuffix(d.sessionRequests || 0);
 
     const hasCache = Number.isFinite(d.cacheHitPct);
     const cachePct = hasCache ? Math.max(0, Math.min(100, d.cacheHitPct)) : null;

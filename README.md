@@ -5,10 +5,12 @@
 一个极简、零第三方依赖的 **Google Antigravity** 输入框监控胶囊插件。  
 不改 `app.asar` 安装包 · 无侧边栏打扰 · 不自动杀进程 · 原生设置集成
 
-[![Version](https://img.shields.io/badge/version-1.0.0-6366f1?style=flat-square)](plugin.json)
+[![Version](https://img.shields.io/badge/version-1.0.1-6366f1?style=flat-square)](plugin.json)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#%E6%9E%81%E7%AE%80%E7%BB%93%E6%9E%84)
-[![Platform](https://img.shields.io/badge/platform-Windows-0ea5e9?style=flat-square)](#%E5%BF%AB%E9%80%9F%E5%AE%89%E8%A3%85)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0ea5e9?style=flat-square)](#%E5%BF%AB%E9%80%9F%E5%AE%89%E8%A3%85)
 [![License: MIT](https://img.shields.io/badge/license-MIT-gray?style=flat-square)](LICENSE)
+
+**简体中文** · [English](README.en.md)
 
 </div>
 

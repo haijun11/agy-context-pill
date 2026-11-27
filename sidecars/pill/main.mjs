@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,7 +8,18 @@ const WIDGET_CODE = readFileSync(join(HERE, 'widget.js'), 'utf8');
 
 const LS_ADDR = process.env.ANTIGRAVITY_LS_ADDRESS || '';
 const LS_CSRF = process.env.ANTIGRAVITY_CSRF_TOKEN || '';
-const DEVTOOLS_PORT_FILE = join(process.env.APPDATA || '', 'Antigravity', 'DevToolsActivePort');
+
+function resolveDevToolsPortFile() {
+  if (process.platform === 'win32') {
+    return join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'Antigravity', 'DevToolsActivePort');
+  }
+  if (process.platform === 'darwin') {
+    return join(homedir(), 'Library', 'Application Support', 'Antigravity', 'DevToolsActivePort');
+  }
+  return join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'Antigravity', 'DevToolsActivePort');
+}
+
+const DEVTOOLS_PORT_FILE = resolveDevToolsPortFile();
 
 const MODEL_WINDOWS = [
   [/claude|sonnet|opus|haiku/i, 200_000],
@@ -18,6 +30,7 @@ const MODEL_WINDOWS = [
 let modelLabels = new Map();
 let geminiQuota = null;
 let lastModelsFetchAt = 0;
+const trajectoryCache = new Map(); // id -> { modified, dateKey, item, daily }
 const sockets = new Map();
 
 async function lsPost(method, body = {}) {
@@ -126,6 +139,87 @@ function isSameLocalDay(isoString, todayKey) {
   return localDateKey(d) === todayKey;
 }
 
+function computeTrajectoryEntry(id, meta, tr, todayKey) {
+  const gens = tr?.trajectory?.generatorMetadata;
+  const steps = tr?.trajectory?.steps || [];
+  if (!Array.isArray(gens) || gens.length === 0) return null;
+
+  let lastGen = null;
+  let totalSessionRead = 0;
+  let totalSessionInput = 0;
+  let sessionTotalTokens = 0;
+  let sessionRequests = 0;
+  const dailyContrib = { totalTokens: 0, cacheRead: 0, uncached: 0, output: 0, requests: 0 };
+
+  for (let i = 0; i < gens.length; i++) {
+    const g = gens[i];
+    const u = g?.chatModel?.usage;
+    if (!u) continue;
+    const inp = Number(u.inputTokens || 0);
+    const read = Number(u.cacheReadTokens || 0);
+    const write = Number(u.cacheCreationInputTokens || 0);
+    const out = Number(u.outputTokens || 0);
+    if (inp <= 0 && read <= 0 && write <= 0 && out <= 0) continue;
+
+    sessionRequests++;
+    totalSessionRead += read;
+    totalSessionInput += inp + read + write;
+    sessionTotalTokens += inp + read + write + out;
+    lastGen = g;
+
+    const stepIdx = Array.isArray(g.stepIndices) ? g.stepIndices[0] : undefined;
+    const ts =
+      (stepIdx !== undefined && (steps[stepIdx]?.metadata?.createdAt || steps[stepIdx]?.metadata?.completedAt)) ||
+      meta?.lastModifiedTime;
+    if (isSameLocalDay(ts, todayKey)) {
+      dailyContrib.cacheRead += read;
+      dailyContrib.uncached += inp + write;
+      dailyContrib.output += out;
+      dailyContrib.totalTokens += inp + read + write + out;
+      dailyContrib.requests++;
+    }
+  }
+
+  if (!lastGen) return null;
+  const lastUsage = lastGen.chatModel.usage;
+  const inputTokens = Number(lastUsage.inputTokens || 0);
+  const cacheReadTokens = Number(lastUsage.cacheReadTokens || 0);
+  const cacheWriteTokens = Number(lastUsage.cacheCreationInputTokens || 0);
+  const outputTokens = Number(lastUsage.outputTokens || 0);
+  const usedTokens = inputTokens + cacheReadTokens + cacheWriteTokens + outputTokens;
+
+  const turnTotalInput = inputTokens + cacheReadTokens + cacheWriteTokens;
+  const cacheHitPct = turnTotalInput > 0 ? (cacheReadTokens / turnTotalInput) * 100 : null;
+  const sessionCacheHitPct = totalSessionInput > 0 ? (totalSessionRead / totalSessionInput) * 100 : null;
+
+  const streamSec = parseSeconds(lastGen.chatModel?.streamingDuration);
+  const ttftSec = parseSeconds(lastGen.chatModel?.timeToFirstToken);
+  const tps = streamSec > 0.1 && outputTokens > 0 ? outputTokens / streamSec : null;
+
+  const modelId = lastUsage.model || '';
+  const modelLabel = lastGen.chatModel?.modelDisplayName || modelLabels.get(modelId) || modelId || 'Model';
+  const maxTokens = resolveWindow(modelId, modelLabel);
+  const percent = maxTokens > 0 ? Math.min(100, (usedTokens / maxTokens) * 100) : 0;
+
+  const item = {
+    id: id.toLowerCase(),
+    usedTokens,
+    maxTokens,
+    percent,
+    modelLabel,
+    cacheReadTokens,
+    uncachedTokens: inputTokens + cacheWriteTokens,
+    outputTokens,
+    cacheHitPct,
+    sessionCacheHitPct,
+    sessionTotalTokens,
+    sessionRequests,
+    tps,
+    ttftSec: ttftSec > 0 ? ttftSec : null,
+  };
+  return { modified: String(meta?.lastModifiedTime || ''), dateKey: todayKey, item, daily: dailyContrib };
+}
+
 async function collectContextMetrics() {
   await refreshModelLabels();
   const list = await lsPost('GetAllCascadeTrajectories', {});
@@ -137,105 +231,38 @@ async function collectContextMetrics() {
     String(b[1]?.lastModifiedTime || '').localeCompare(String(a[1]?.lastModifiedTime || ''))
   );
 
-  // Scan up to 20 conversations modified today (plus at least top 6 recent)
-  const targetIds = new Set();
-  for (const [id, meta] of sorted) {
-    if (targetIds.size < 6 || isSameLocalDay(meta?.lastModifiedTime, todayKey)) {
-      if (targetIds.size < 25) targetIds.add(id);
+  const targetEntries = [];
+  for (const entry of sorted) {
+    if (targetEntries.length < 6 || isSameLocalDay(entry[1]?.lastModifiedTime, todayKey)) {
+      if (targetEntries.length < 25) targetEntries.push(entry);
     }
   }
 
   const byId = {};
   let latest = null;
-  const daily = {
-    totalTokens: 0,
-    cacheRead: 0,
-    uncached: 0,
-    output: 0,
-    requests: 0,
-  };
+  const daily = { totalTokens: 0, cacheRead: 0, uncached: 0, output: 0, requests: 0 };
 
-  for (const id of targetIds) {
-    const tr = await lsPost('GetCascadeTrajectory', { cascadeId: id });
-    const gens = tr?.trajectory?.generatorMetadata;
-    const steps = tr?.trajectory?.steps || [];
-    if (!Array.isArray(gens) || gens.length === 0) continue;
-
-    let lastGen = null;
-    let totalSessionRead = 0;
-    let totalSessionInput = 0;
-    let sessionTotalTokens = 0;
-    let sessionRequests = 0;
-
-    for (let i = 0; i < gens.length; i++) {
-      const g = gens[i];
-      const u = g?.chatModel?.usage;
-      if (!u) continue;
-      const inp = Number(u.inputTokens || 0);
-      const read = Number(u.cacheReadTokens || 0);
-      const write = Number(u.cacheCreationInputTokens || 0);
-      const out = Number(u.outputTokens || 0);
-      if (inp <= 0 && read <= 0 && write <= 0 && out <= 0) continue;
-
-      sessionRequests++;
-      totalSessionRead += read;
-      totalSessionInput += inp + read + write;
-      sessionTotalTokens += inp + read + write + out;
-      lastGen = g;
-
-      // Check step timestamp for daily tally
-      const stepIdx = Array.isArray(g.stepIndices) ? g.stepIndices[0] : undefined;
-      const ts =
-        (stepIdx !== undefined && (steps[stepIdx]?.metadata?.createdAt || steps[stepIdx]?.metadata?.completedAt)) ||
-        summaries[id]?.lastModifiedTime;
-      if (isSameLocalDay(ts, todayKey)) {
-        daily.cacheRead += read;
-        daily.uncached += inp + write;
-        daily.output += out;
-        daily.totalTokens += inp + read + write + out;
-        daily.requests++;
+  for (const [id, meta] of targetEntries) {
+    const modified = String(meta?.lastModifiedTime || '');
+    let cached = trajectoryCache.get(id);
+    if (!cached || cached.modified !== modified || cached.dateKey !== todayKey) {
+      const tr = await lsPost('GetCascadeTrajectory', { cascadeId: id });
+      const computed = computeTrajectoryEntry(id, meta, tr, todayKey);
+      if (computed) {
+        trajectoryCache.set(id, computed);
+        cached = computed;
+      } else {
+        continue;
       }
     }
 
-    if (!lastGen) continue;
-    const lastUsage = lastGen.chatModel.usage;
-    const inputTokens = Number(lastUsage.inputTokens || 0);
-    const cacheReadTokens = Number(lastUsage.cacheReadTokens || 0);
-    const cacheWriteTokens = Number(lastUsage.cacheCreationInputTokens || 0);
-    const outputTokens = Number(lastUsage.outputTokens || 0);
-    const usedTokens = inputTokens + cacheReadTokens + cacheWriteTokens + outputTokens;
-
-    const turnTotalInput = inputTokens + cacheReadTokens + cacheWriteTokens;
-    const cacheHitPct = turnTotalInput > 0 ? (cacheReadTokens / turnTotalInput) * 100 : null;
-    const sessionCacheHitPct = totalSessionInput > 0 ? (totalSessionRead / totalSessionInput) * 100 : null;
-
-    const streamSec = parseSeconds(lastGen.chatModel?.streamingDuration);
-    const ttftSec = parseSeconds(lastGen.chatModel?.timeToFirstToken);
-    const tps = streamSec > 0.1 && outputTokens > 0 ? outputTokens / streamSec : null;
-
-    const modelId = lastUsage.model || '';
-    const modelLabel = lastGen.chatModel?.modelDisplayName || modelLabels.get(modelId) || modelId || 'Model';
-    const maxTokens = resolveWindow(modelId, modelLabel);
-    const percent = maxTokens > 0 ? Math.min(100, (usedTokens / maxTokens) * 100) : 0;
-
-    const item = {
-      id: id.toLowerCase(),
-      usedTokens,
-      maxTokens,
-      percent,
-      modelLabel,
-      cacheReadTokens,
-      uncachedTokens: inputTokens + cacheWriteTokens,
-      outputTokens,
-      cacheHitPct,
-      sessionCacheHitPct,
-      sessionTotalTokens,
-      sessionRequests,
-      tps,
-      ttftSec: ttftSec > 0 ? ttftSec : null,
-    };
-    byId[item.id] = item;
-    if (!latest) latest = item;
+    byId[cached.item.id] = cached.item;
+    if (!latest) latest = cached.item;
+    daily.totalTokens += cached.daily.totalTokens;
+    daily.cacheRead += cached.daily.cacheRead;
+    daily.uncached += cached.daily.uncached;
+    daily.output += cached.daily.output;
+    daily.requests += cached.daily.requests;
   }
 
   return { byId, latest, daily, geminiQuota };
@@ -308,7 +335,7 @@ async function tick() {
   const payload = await collectContextMetrics();
   const json = JSON.stringify(payload);
   for (const conn of sockets.values()) {
-    cdpEval(conn, `if (window.__agCtxPillVersion !== 13) { ${WIDGET_CODE} } window.__agCtxPillUpdate?.(${json});`);
+    cdpEval(conn, `if (window.__agCtxPillVersion !== 14) { ${WIDGET_CODE} } window.__agCtxPillUpdate?.(${json});`);
   }
 }
 
